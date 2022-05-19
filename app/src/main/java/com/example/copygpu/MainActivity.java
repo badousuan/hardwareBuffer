@@ -3,6 +3,7 @@ package com.example.copygpu;
 import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
+import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.os.Bundle;
@@ -78,6 +79,7 @@ public class MainActivity extends Activity {
             mCamera.setPreviewTexture(mSurfaceTexture);
             mParameters = mCamera.getParameters();
             mParameters.setPreviewSize(1920, 1080);
+            mParameters.setPreviewFormat(ImageFormat.YV12);
             mParameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
             mCamera.setParameters(mParameters);
             mCamera.setDisplayOrientation(90);

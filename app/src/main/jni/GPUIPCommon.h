@@ -89,6 +89,7 @@ public:
 };
 
 void GPUIPBuffer_NV21_COPY(GPUIPBuffer *srcBuffer, GPUIPBuffer *dstBuffer);
+void GPUIPBuffer_YV12_COPY(GPUIPBuffer *srcBuffer, GPUIPBuffer *dstBuffer);
 void GPUIPBuffer_RGB_COPY(GPUIPBuffer *srcBuffer, GPUIPBuffer *dstBuffer);
 void GPUIPBuffer_RGBA_COPY(GPUIPBuffer *srcBuffer, GPUIPBuffer *dstBuffer);
 void GPUIPBuffer_Y8U8V8_NV21(GPUIPBuffer *srcBuffer, GPUIPBuffer *dstBuffer);

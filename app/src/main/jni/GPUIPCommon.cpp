@@ -47,6 +47,65 @@ void GPUIPBuffer_NV21_COPY(GPUIPBuffer *srcBuffer, GPUIPBuffer *dstBuffer)
     }
 }
 
+
+void GPUIPBuffer_YV12_COPY(GPUIPBuffer *srcBuffer, GPUIPBuffer *dstBuffer)
+{
+    if ((srcBuffer->width != dstBuffer->width)
+        || (srcBuffer->height != dstBuffer->height))
+    {
+        LOGE("GPUIPBuffer_NV21_COPY error. srcW = %d, dstW = %d, srcH = %d, dstH = %d\n",
+             srcBuffer->width, dstBuffer->width, srcBuffer->height, dstBuffer->height);
+        return;
+    }
+
+    if (srcBuffer->stride == dstBuffer->stride)
+    {
+        int size = srcBuffer->stride * srcBuffer->height;
+
+        memcpy(dstBuffer->pY, srcBuffer->pY, size);
+        memcpy(dstBuffer->pU, srcBuffer->pU, size / 4);
+        memcpy(dstBuffer->pV, srcBuffer->pV, size / 4);
+    }
+    else
+    {
+        int i;
+        uint8_t *pSrc;
+        uint8_t *pDst;
+
+        //LOGE("GPUIPBuffer_NV21_COPY warning! srcStride = %d, dstStride = %d",
+        //       srcBuffer->stride, dstBuffer->stride);
+        pSrc = (uint8_t *)srcBuffer->pY;
+        pDst = (uint8_t *)dstBuffer->pY;
+
+        for (i = 0; i < srcBuffer->height; i++)
+        {
+            memcpy(pDst, pSrc, srcBuffer->width);
+            pSrc += srcBuffer->stride;
+            pDst += dstBuffer->stride;
+        }
+
+        pSrc = (uint8_t *)srcBuffer->pU;
+        pDst = (uint8_t *)dstBuffer->pU;
+
+        for (i = 0; i < srcBuffer->height / 2; i++)
+        {
+            memcpy(pDst, pSrc, srcBuffer->width/2);
+            pSrc += srcBuffer->stride;
+            pDst += dstBuffer->stride;
+        }
+
+        pSrc = (uint8_t *)srcBuffer->pV;
+        pDst = (uint8_t *)dstBuffer->pV;
+
+        for (i = 0; i < srcBuffer->height / 2; i++)
+        {
+            memcpy(pDst, pSrc, srcBuffer->width/2);
+            pSrc += srcBuffer->stride;
+            pDst += dstBuffer->stride;
+        }
+    }
+}
+
 void GPUIPBuffer_RGB_COPY(GPUIPBuffer *srcBuffer, GPUIPBuffer *dstBuffer)
 {
     int size;

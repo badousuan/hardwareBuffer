@@ -8,7 +8,7 @@ Java_com_example_copygpu_GLCopyJni_initHardwareBuffer(
         JNIEnv*env, jclass type, jint width, jint height, jint textureId)
 {
     GraphicBufferEx* graphicBufferEx = new GraphicBufferEx(eglGetCurrentDisplay(), EGL_NO_CONTEXT);
-    int format = 17; //HAL_PIXEL_FORMAT_YCrCb_420_SP
+    int format = AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420; //HAL_PIXEL_FORMAT_YCrCb_420_SP
     graphicBufferEx->create(width, height, textureId, format);
     return (jlong)graphicBufferEx;
 }
@@ -27,21 +27,44 @@ Java_com_example_copygpu_GLCopyJni_getBuffer(
         JNIEnv*env, jclass type, jlong handler)
 {
     GraphicBufferEx* graphicBufferEx =  (GraphicBufferEx*)handler;
-    jbyteArray jYuvArray = env->NewByteArray(graphicBufferEx->getWidth()*graphicBufferEx->getHeight()*3/2);
+    int width = graphicBufferEx->getWidth();
+    int stride = graphicBufferEx->getStride();
+    int height = graphicBufferEx->getHeight();
+    jbyteArray jYuvArray = env->NewByteArray(stride*height*3/2);
     jbyte* yuvArray = env->GetByteArrayElements(jYuvArray, NULL);
     GPUIPBuffer buffer;
-    buffer.width = graphicBufferEx->getWidth();
-    buffer.height = graphicBufferEx->getHeight();
+    int plannerSize = stride * height;
+    buffer.width = width;
+    buffer.height = height;
     buffer.format = graphicBufferEx->getFormat();
-    buffer.stride = buffer.width;
-    buffer.length = buffer.stride * buffer.height * 3 / 2;
+    buffer.stride = stride;
+    buffer.length = plannerSize * 3 / 2;
     buffer.pY = yuvArray;
-    buffer.pU = yuvArray + buffer.stride * buffer.height;
-    buffer.pV = buffer.pU;
+    buffer.pU = yuvArray + plannerSize;
+    if(buffer.format == AHARDWAREBUFFER_FORMAT_Y8Cb8Cr8_420) {
+        buffer.pV = yuvArray + plannerSize*5/4;
+    } else  if(buffer.format == 17) {
+        buffer.pV = buffer.pU;
+    }
 
-    graphicBufferEx->getBuffer(GPUIPBuffer_NV21_COPY, &buffer);
+
+    graphicBufferEx->getBuffer(GPUIPBuffer_YV12_COPY, &buffer);
     //LOGI("dump yuv");
     //dump("/sdcard/123.yuv", buffer.pY, buffer.length);
+    // to yv12
+    uint8_t * tmpSrc =  static_cast<uint8_t*>(buffer.pU);
+    uint8_t * tmpSrcUV = tmpSrc;
+
+    uint8_t* tmpDst = new uint8_t[plannerSize/2];
+    uint8_t * tmpDstV =  (uint8_t*)tmpDst + plannerSize/4;
+    uint8_t * tmpDstU = tmpDst;
+
+    for (int i = 0; i < plannerSize/4; ++i) {
+      *(tmpDstV++) = *(tmpSrcUV++);
+      *(tmpDstU++) = *(tmpSrcUV++);
+    }
+    memcpy(tmpSrc,tmpDst,plannerSize/2);
+    delete[] tmpDst;
     env->ReleaseByteArrayElements(jYuvArray, yuvArray, 0);
     return jYuvArray;
 }

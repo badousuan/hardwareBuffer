@@ -40,19 +40,20 @@ public class MyGLRenderer implements MySurfaceView.Renderer {
 
         mPreviewTextureId = GLUtil.getOneTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
         mPreviewTexture.detachFromGLContext();
-        mPreviewTexture.attachToGLContext(mPreviewTextureId);
+        mPreviewTexture.attachToGLContext(mPreviewTextureId); //绑定mPreviewTexture到当前gl环境，即绘制到创建gl环境的surfaceholder上
+        //https://www.khronos.org/registry/OpenGL/extensions/EXT/EXT_YUV_target.txt
         mPreview = new Picture(mContext.getResources(), R.raw.texture_vertex_shader, R.raw.texture_oes_fragment_shader,
-                mPreviewTextureId, GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
+                mPreviewTextureId, GLES11Ext.GL_TEXTURE_EXTERNAL_OES); //预览shader
         mOes2OesPicture = new Picture(mContext.getResources(), R.raw.texture_vertex_shader, R.raw.texture_oes2oes_fragment_shader,
-                mPreviewTextureId, GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
+                mPreviewTextureId, GLES11Ext.GL_TEXTURE_EXTERNAL_OES); //输出yuv shader
 
         mOESTextureId = GLUtil.getOneTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
-        mGLCopyJni = new GLCopyJni(1080, 1920, mOESTextureId);
+        mGLCopyJni = new GLCopyJni(1088, 1920, mOESTextureId);
         mOesPicture = new Picture(mContext.getResources(), R.raw.texture_vertex_shader, R.raw.texture_oes_fragment_shader,
                 mOESTextureId, GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
 
         m2DTextureId = GLUtil.getOneTexture(GLES20.GL_TEXTURE_2D);
-        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, 1080, 1920, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
+        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, 1088, 1920, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
         m2DPicture = new Picture(mContext.getResources(), R.raw.texture_vertex_shader, R.raw.texture_2d_fragment_shader,
                 m2DTextureId, GLES20.GL_TEXTURE_2D);
     }
@@ -68,7 +69,7 @@ public class MyGLRenderer implements MySurfaceView.Renderer {
         // Redraw background color
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
-        mPreviewTexture.updateTexImage();
+        mPreviewTexture.updateTexImage(); //更新相机输出到纹理mPreviewTextureId
         //直接将预览绘制到屏幕
         //mPreview.draw();
 
@@ -90,7 +91,7 @@ public class MyGLRenderer implements MySurfaceView.Renderer {
         //将预览绘制到一个OES纹理，将纹理的数据拷贝出来并保存，再将纹理绘制到屏幕
         beginRenderTarget(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mOESTextureId);
         GLUtil.checkGlError();
-        mOes2OesPicture.draw();
+        mOes2OesPicture.draw(); // 采样mPreviewTextureId纹理到mOESTextureId
         GLUtil.checkGlError();
         GLES20.glFinish();
         endRenderTarget();
@@ -140,15 +141,21 @@ public class MyGLRenderer implements MySurfaceView.Renderer {
         GLUtil.checkGlError();
     }
 
-    private static void save(byte[] yuv) {
-        try {
-            String pathName = "/sdcard/hw.yuv";
-            FileOutputStream outputStream = new FileOutputStream(pathName);
-            outputStream.write(yuv);
-            outputStream.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+    private static int xxx = 0;
+    private void save(byte[] yuv) {
+        if((xxx++) == 100) {
+            try {
+                String path = mContext.getApplicationContext().getExternalFilesDir(null).getAbsolutePath();
+                String pathName = path+"/hw.yuv";
+                Log.e(TAG,"pathName:"+pathName);
+                FileOutputStream outputStream = new FileOutputStream(pathName);
+                outputStream.write(yuv);
+                outputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
+
     }
 
 }

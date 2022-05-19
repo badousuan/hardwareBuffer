@@ -4,7 +4,7 @@
 
 in vec2 vTextureCoord;
 uniform samplerExternalOES uTextureSampler;
-
+// 输出YUV数据
 layout(yuv) out vec4 gl_FragColor;
 
 void main() {
